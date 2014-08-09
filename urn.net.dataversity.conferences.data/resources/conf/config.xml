@@ -3,6 +3,7 @@
 	<conferences>
 		<conference id="20">
 			<name>SemTech</name>
+			<location>San Jose, CA</location>
 			<year>2008</year>
 		</conference>
 		<conference id="35">
