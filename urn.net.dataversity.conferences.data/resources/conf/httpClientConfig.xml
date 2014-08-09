@@ -1,0 +1,4 @@
+<config>
+    <connectTimeout>5000</connectTimeout>
+    <timeout>20000</timeout>
+</config>

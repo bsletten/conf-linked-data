@@ -1,0 +1,214 @@
+import org.netkernel.layer0.representation.IHDSNode
+import groovy.xml.MarkupBuilder
+
+def normalizeTwitter(def twitName) {
+   def t = twitName.replaceAll("/ ", "/")
+   t = twitName.replaceAll("#!/", "")
+   t = t.replaceAll('https://twitter.com/','@')
+   t = t.replaceAll('http://twitter.com/', '@')
+   t = t.replaceAll('http://www.twitter.com/', '@')   
+   t = t.replaceAll('www.twitter.com/', '@')
+   t = t.replaceAll('twitter.com/', '@')
+ 
+   if(t.endsWith("/")) {
+   	  t = t.substring(0, t.length() - 1)
+   }
+   
+   if(t.length() > 0 && !t.startsWith('@')) {
+   	   t = '@' + t
+   }
+   
+   t = t.replaceAll("@ ", "@")
+   t = t.toLowerCase()
+   t
+}
+
+def normalizeLinkedIn(def linkedin) {
+   if(linkedin.startsWith("www")) {
+   	  linkedin = "http://" + linkedin
+   }
+   
+   if(linkedin.endsWith("/")) {
+   	  linkedin = linkedin.substring(0, linkedin.length() - 1)
+   }
+   
+   linkedin
+}
+
+def config = context.source("res:/resources/conf/config.xml", IHDSNode.class)
+def conferences = config.getNodes("/config/conferences/conference")
+def handles = []
+
+def speakers = new TreeMap()
+def twitterHandles = [:]
+def linkedInHandles = [:]
+
+conferences.each { c ->
+	def name = c.getFirstValue("name")
+	def year = c.getFirstValue("year")
+	def id = c.getFirstValue("@id")
+	
+	req = context.createRequest("active:dataversity-conference-raw")
+	req.addArgument("confname", name)
+	req.addArgument("confid", id)
+	req.addArgument("year", year)
+	
+	result = context.issueAsyncRequest(req)
+	handles.add(result)
+}
+
+handles.each { h ->
+	def rep = h.join()
+	
+	def conf = new XmlSlurper().parseText(rep)
+
+	conf.'event-group'.event.speaker.each { sp->
+	
+		def name = sp.name.text().trim()
+		def company = sp.company.text().trim()
+		def twitter = normalizeTwitter(sp.twitter.text().trim())
+		def facebook = sp.facebook.text().trim()
+		def linkedin = normalizeLinkedIn(sp.linkedin.text().trim())
+		
+		def s
+		
+		if(twitter && twitterHandles[twitter] != null) {
+			s = twitterHandles[twitter]
+		}
+		
+		if(s) {
+			println "FOUND ${name} by ${twitter}"
+		}
+		
+		if(linkedin && linkedInHandles[linkedin] != null) {
+			if(s == null)
+			{
+			   s = linkedInHandles[linkedin]
+			   
+	   		    if(s) {
+	   			   println "FOUND ${name} by ${linkedin}"
+			   }
+			} else {
+				if(s != linkedInHandles[linkedin]) {
+					println "WARNING!!!"
+					println s
+					println "-----"
+					println "LINKEDIN: ${linkedin}"
+					println linkedInHandles.get(linkedin)
+					println "+++++"
+				} else {
+					println "FOUND ${name} by ${linkedin} and ${twitter}"
+				}
+			}
+		}
+		
+		if(s == null) {
+			s = speakers.get(name)
+		}
+		
+		if(s == null) {
+			s = [:]
+			s['name'] = [name]
+			s['company'] = [company]
+			
+			if(twitter && twitter.length()) {
+				s['twitter'] = [twitter]
+				twitterHandles[twitter] = s				
+			}
+
+			if(facebook && facebook.length()) {
+				s['facebook'] = [facebook]
+			}
+			
+			if(linkedin && linkedin.length()) {
+				s['linkedin'] = [linkedin]
+				linkedInHandles[linkedin] = s				
+			}
+			
+			speakers.put(name, s)
+		} else {
+			if(!s['name'].contains(name)) {
+				s['name'].add(name)
+			}
+			
+			if(company && company.length() && !s['company'].contains(company)) {
+				s['company'].add(company)
+			}
+			
+			if(twitter && twitter.length()) {
+				if(s['twitter'] == null) {
+				  s['twitter'] = [twitter]
+				  twitterHandles[twitter] = s
+				} else {
+					if(!s['twitter'].contains(twitter)) {
+						s['twitter'].add(twitter)
+						twitterHandles[twitter] = s						
+					}
+				}
+			}
+			
+			if(facebook && facebook.length()) {
+				if(s['facebook'] == null) {
+					s['facebook'] = [facebook]
+				} else {
+					if(!s['facebook'].contains(facebook)) {
+						s['facebook'].add(facebook)
+					}
+				}
+			} 
+			
+			if(linkedin && linkedin.length()) {
+			   if(s['linkedin'] == null) {
+			   	  s['linkedin'] = [linkedin]
+				  linkedInHandles[linkedin] = s
+			   } else {
+			   	  if(!s['linkedin'].contains(linkedin)) {
+   				     s['linkedin'].add(linkedin)
+				  }
+			   }
+			}
+		}
+	}
+}
+
+sw = new StringWriter()
+mb = new MarkupBuilder(sw)
+
+mb.speakers {
+	speakers.each { k, v ->
+		speaker {
+			sname(k)
+			
+			println v
+
+			    def twit = v['twitter']
+				def face = v['facebook']
+				def link = v['linkedin']
+				def comp = v['company']
+				
+				comp.each { c ->
+					company(c)
+				}
+
+				if(twit && twit.size() > 0) {
+					twit.each { t ->
+						twitter(t)					
+					}
+				}
+				
+				if(face && face.size() > 0) {
+					face.each { f ->
+						facebook(f)					
+					}
+				}
+				
+				if(link && link.size() > 0 ) {
+					link.each { l ->
+						linkedin(l)
+					}
+				}
+		}
+	}
+}
+
+context.createResponseFrom(sw.toString())

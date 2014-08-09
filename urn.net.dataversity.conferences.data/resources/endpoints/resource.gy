@@ -1,0 +1,22 @@
+def preferred = context.source("httpRequest:/accept/preferred")
+def resource = context.source("arg:resource")
+def resp
+	
+switch(preferred) {
+	case "application/xhtml+xml":
+	case "text/html":
+		resp = "Redirecting you"
+		context.sink("httpResponse:/redirect", "/page/${resource}".toString())
+	break;
+	
+	default:
+		resp = "UNKNOWN MIME TYPE: ${preferred}"
+		context.sink("httpResponse:/code",303);
+		context.sink("httpResponse:/header/location", "/data/${resource}.rdf".toString())
+	break;
+}
+
+// TCN
+// Vary
+// http://dbpedia.org/resource/Los_Angeles
+context.createResponseFrom(resp)

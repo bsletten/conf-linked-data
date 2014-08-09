@@ -1,0 +1,405 @@
+import org.netkernel.rdf.jena.rep.*;
+import com.hp.hpl.jena.rdf.model.*;
+import com.hp.hpl.jena.vocabulary.*;
+import com.hp.hpl.jena.shared.*;
+import com.hp.hpl.jena.datatypes.xsd.*;
+
+def getEventType(urlPrefix, nsMap, model, eventName) {
+	def eventType
+	
+	if(eventName.contains("Break")) {
+		eventType = model.getResource("${nsMap['swc']}BreakEvent")	
+	} else if(eventName.contains("Panel")) {
+		eventType = model.getResource("${nsMap['swc']}PanelEvent")		
+	} else if(eventName.contains("Workshop")) {
+		eventType = model.getResource("${nsMap['swc']}WorkshopEvent")		
+	} else if(eventName.contains("Tutorial")) {
+		eventType = model.getResource("${nsMap['swc']}TutorialEvent")		
+	} else if(eventName.contains("Meetup")) {
+		// TODO: Extend the Model
+		eventType = model.getResource("${nsMap['swc']}OrganizedEvent")
+	} else if(eventName.contains("Reception")) {
+		eventType = model.getResource("${nsMap['swc']}SocialEvent")	
+	}
+
+	if(!eventType) {
+		switch(eventName) {
+			case "Lightning Talks":
+				// TODO: Extend the Model
+				eventType = model.getResource("${nsMap['swc']}SessionEvent")
+			break;
+			case "Keynote":
+			case "Keynote Presentation":
+				// TODO: Extend the Model			
+				eventType = model.getResource("${nsMap['swc']}TalkEvent")		
+			break;
+			case "Conference Sessions":
+				eventType = model.getResource("${nsMap['swc']}SessionEvent")
+			break;
+			
+			case "Semantic Solutions (Sponsored)":
+				// TODO: Extend the Model			
+				eventType = model.getResource("${nsMap['swc']}TalkEvent")		
+			break;
+		
+			case "Exhibits Open":
+				// TODO: Extend the Model
+				eventType = model.getResource("${nsMap['swc']}OrganizedEvent")		
+			break;
+			
+			case "Hot Topic Presentations":
+				eventType = model.getResource("${nsMap['swc']}TalkEvent")		
+			break;
+		}
+	}
+	
+	if(eventType == null) {
+		eventType = model.getResource("${urlPrefix}/ns/conf#UnknownEvent")
+	}
+	
+	eventType
+}
+
+def urlify(str) {
+	str = str.toLowerCase()
+	str = str.trim()
+	str = str.replaceAll(" ", "-")
+	str = str.replaceAll("'", "")
+	str = str.replaceAll(",", "")
+	str = str.replaceAll("\\.", "")
+	str = str.replaceAll("&", "and")
+	str = str.replaceAll("\\!", "")
+	str = str.replaceAll("/", "-")
+	str = str.replaceAll("\"", "")
+		
+	while(str.indexOf("--") > 0) {
+		str = str.replaceAll("--", "-")
+	}
+	
+	str
+}
+
+def extractTalkId(href) {
+	// We are expecting partial hrefs like this:
+	// sessionPop.cfm?confid=82&proposalid=6413
+	
+	def talkId
+	def qIdx = href.indexOf("?")
+	
+	if(qIdx > 0) {
+		href = href.substring(qIdx++)
+		
+		def kv = href.split('&')
+		kv.each { k ->
+			def arg = k.split('=')
+			if(arg[0].equals('proposalid')) {
+				talkId=arg[1]
+			}
+		}
+	}
+	
+	talkId
+}
+
+def getTalkURI(urlPrefix, name, year, confid, talkId) {
+	name = name.toLowerCase().trim()
+	"${urlPrefix}/resource/${name}-${year}-${confid}-${talkId}".toString()
+}
+
+def sanitize(text) {
+	clean = text.replaceAll("&", "&amp;")
+	clean = clean.replaceAll("<", "&lt;")
+	clean = clean.replaceAll(">", "&gt;")		
+	clean
+}
+
+def normalizeTwitter(def twitName) {
+   def t = twitName.replaceAll("/ ", "/")
+   t = twitName.replaceAll("#!/", "")
+   t = t.replaceAll('https://twitter.com/','@')
+   t = t.replaceAll('http://twitter.com/', '@')
+   t = t.replaceAll('http://www.twitter.com/', '@')   
+   t = t.replaceAll('www.twitter.com/', '@')
+   t = t.replaceAll('twitter.com/', '@')
+ 
+   if(t.endsWith("/")) {
+   	  t = t.substring(0, t.length() - 1)
+   }
+   
+   if(t.length() > 0 && !t.startsWith('@')) {
+   	   t = '@' + t
+   }
+   
+   t = t.replaceAll("@ ", "@")
+   t = t.toLowerCase()
+   t.replaceAll('@', 'http://twitter.com/')
+}
+
+def normalizeFacebook(facebook) {
+	facebook
+}
+
+def normalizeLinkedIn(def linkedin) {
+   if(linkedin.startsWith("www")) {
+   	  linkedin = "http://" + linkedin
+   }
+   
+   if(linkedin.endsWith("/")) {
+   	  linkedin = linkedin.substring(0, linkedin.length() - 1)
+   }
+   
+   linkedin
+}
+
+//
+// BEGIN SCRIPT
+//
+
+def confid = context.source("arg:confid")
+def confname = context.source("arg:confname")
+def year = context.source("arg:year")
+
+def jenaModel = context.source("active:jRDFEmptyModel").getModel();
+def resp
+
+// TODO: Move this into a class
+def nsMap = [
+	"xsd" : "http://www.w3.org/2001/XMLSchema",
+	"rdfs" : "http://www.w3.org/2000/01/rdf-schema#",
+	"rdf" : RDF.getURI(),
+	"dc" : DC_11.getURI(),
+	"dcat" : "http://www.w3.org/ns/dcat#",
+	"dcterms" : "http://purl.org/dc/terms/",
+	"foaf" : "http://xmlns.com/foaf/0.1/",
+	"cal" : "http://www.w3.org/2002/12/cal/icaltzd/",
+	"biblio" : "http://purl.org/net/biblio#",
+	"swrc" : "http://swrc.ontoware.org/ontology#",
+	"swc" : "http://data.semanticweb.org/ns/swc/ontology#",
+	"skos" : "http://www.w3.org/2004/02/skos/core#",
+	"vcard" : VCARD.getURI()
+]
+
+try {
+	def urlPrefix = "http://data.semanticweb.com"
+
+	req = context.createRequest("active:dataversity-conference-raw")
+	req.addArgument("confname", confname)
+	req.addArgument("confid", confid)
+	req.addArgument("year", year)
+	resp = context.issueRequest(req)
+
+	def confEventRes = jenaModel.getResource("${nsMap['swc']}ConferenceEvent")
+	def breakEventRes = jenaModel.getResource("${nsMap['swc']}BreakEvent")	
+	def trackEventRes = jenaModel.getResource("${nsMap['swc']}TrackEvent")	
+	def presenterRes = jenaModel.getResource("${nsMap['swc']}Presenter")
+	def skosConceptRes = jenaModel.getResource("${nsMap['skos']}Concept")		
+	def personRes = jenaModel.getResource("${nsMap['foaf']}Person")
+	def foafOrganizationRes = jenaModel.getResource("${nsMap['foaf']}Organization")				
+	def sessionEventRes = jenaModel.getResource("${nsMap['swc']}SessionEvent")	
+	def meetingRoomRes = jenaModel.getResource("${nsMap['swc']}MeetingRoomPlace")
+	def onlineAccountRes = jenaModel.getResource("${nsMap['foaf']}OnlineAccount")
+	def imageRes = jenaModel.createProperty("${nsMap['foaf']}Image")								
+	def isSuperEventOfProp = jenaModel.createProperty("${nsMap['swc']}isSuperEventOf")
+	def isPartOfProp = jenaModel.createProperty("${nsMap['swc']}isPartOf")
+	def hasRoleProp = jenaModel.createProperty("${nsMap['swc']}hasRole")				
+	def isRoleAtProp = jenaModel.createProperty("${nsMap['swc']}isRoleAt")
+	def holdsRoleProp = jenaModel.createProperty("${nsMap['swc']}holdsRole")
+	def heldByProp = jenaModel.createProperty("${nsMap['swc']}heldBy")				
+	def isLocationForProp = jenaModel.createProperty("${nsMap['swc']}isLocationFor")		
+	def rdfsMemberProp = jenaModel.createProperty("${nsMap['rdfs']}member")
+	def foafNameProp = jenaModel.createProperty("${nsMap['foaf']}name")
+	def foafAccountProp = jenaModel.createProperty("${nsMap['foaf']}account")
+	def foafMemberProp = jenaModel.createProperty("${nsMap['foaf']}member")		
+	def foafDepictionProp = jenaModel.createProperty("${nsMap['foaf']}depiction")		
+	def dcCreatorProp = jenaModel.createProperty("${nsMap['dcterms']}creator")		
+	def dcAudienceProp = jenaModel.createProperty("${nsMap['dcterms']}audience")
+	def skosRelatedProp = jenaModel.createProperty("${nsMap['skos']}related")
+	def skosPrefLabelProp = jenaModel.createProperty("${nsMap['skos']}prefLabel")
+	def dcTitleProp = jenaModel.createProperty("${nsMap['dcterms']}title")
+	def calStartProp = jenaModel.createProperty("${nsMap['cal']}dtStart")
+	def calEndProp = jenaModel.createProperty("${nsMap['cal']}dtEnd")
+	def rdfsLabelProp = jenaModel.createProperty("${nsMap['rdfs']}label")
+	def kwProp = jenaModel.createProperty("${nsMap['dcat']}keyword")
+	def abstractProp = jenaModel.createProperty("${nsMap['dcterms']}abstract")			
+	def descProp = jenaModel.createProperty("${nsMap['dcterms']}description")
+		
+	def confRes = jenaModel.createResource("${urlPrefix}/resource/${confname.toLowerCase()}-${year}-${confid}",
+	 	confEventRes)
+	def confSpeakerRes = jenaModel.createResource("${urlPrefix}/resource/${confname.toLowerCase()}-${year}-${confid}-speaker", presenterRes)
+	confSpeakerRes.addProperty(rdfsLabelProp, "${confname} ${year} ${confid} Speaker")
+	confRes.addProperty(hasRoleProp, confSpeakerRes)
+	confSpeakerRes.addProperty(isRoleAtProp, confRes)
+	
+	if( resp != null ) { 
+		def conf = new XmlSlurper().parseText(resp)
+		
+		confRes.addProperty(rdfsLabelProp, "${confname} ${year}")
+		
+		conf.'event-group'.each { eg ->
+			def dtStart = jenaModel.createTypedLiteral(eg.when.@start.toString(), XSDDatatype.XSDdateTime)
+			def dtEnd = jenaModel.createTypedLiteral(eg.when.@end.toString(), XSDDatatype.XSDdateTime)			
+			def eventType =  getEventType(urlPrefix, nsMap, jenaModel, eg.title.text())
+			
+			def node
+			
+			if(eg.event.size()) {
+				eg.event.each { ev ->
+					def talkId = extractTalkId(ev.@href.text())
+					def talkResURI = getTalkURI(urlPrefix, confname, year, confid, talkId)
+					node = jenaModel.createResource(talkResURI, eventType)
+					node.addProperty(dcTitleProp, sanitize(ev.title.text().trim()))
+					node.addProperty(calStartProp, dtStart)
+					node.addProperty(calEndProp, dtEnd)	
+					confRes.addProperty(isSuperEventOfProp, node)
+						
+					def roomName = ev.roomName.text().trim()
+					def roomResName
+						
+					if(roomName?.size()) {
+						roomResName = urlify(roomName)
+							
+						def roomRes = jenaModel.createResource("${urlPrefix}/resource/${roomResName}", meetingRoomRes)
+						roomRes.addProperty(rdfsLabelProp, "${roomName}")
+						roomRes.addProperty(isLocationForProp, node)	
+					}
+					
+					def abs = sanitize(ev.briefDescription.text())
+					if(abs.length()) {
+						node.addProperty(abstractProp, abs)
+					}
+						
+					def desc = sanitize(ev.description.text())
+					if(desc.length()) {
+						node.addProperty(descProp, desc)
+					}
+					
+					def treatments = ev.treatment.each { tr ->
+						def trName = tr.text().trim()
+						def trResName = urlify(trName)
+						def trRes = jenaModel.createResource("${urlPrefix}/resource/${trResName}", skosConceptRes)
+						trRes.addProperty(skosPrefLabelProp, trName)
+							
+						node.addProperty(skosRelatedProp, trRes)
+					}
+					
+					def keywords = ev.keywords.text().trim().split(",")
+					if(keywords?.size()) {
+						keywords.each { kw ->
+							if(kw.length()) {
+								node.addProperty(kwProp, kw)
+							}
+						}
+					}
+					
+					def audience = ev.@audienceLevel.text()
+					if(audience.startsWith("Technical")) {
+						node.addProperty(dcAudienceProp, "Technical")
+						def levelIdx = audience.indexOf("-")
+						if(levelIdx > 0) {
+							node.addProperty(dcAudienceProp, audience.substring(levelIdx + 2))
+						}
+						
+					} else if(audience.startsWith("Business")) {
+						node.addProperty(dcAudienceProp, "Business")
+						node.addProperty(dcAudienceProp, "Non-Technical")
+					} else {
+						node.addProperty(dcAudienceProp, audience)
+					}
+					
+					ev.track.each { tr ->
+						def trackName = tr.text().trim().replaceAll("&", "and")
+						def trackResName = urlify("${trackName}")
+							
+						def trackRes = jenaModel.createResource("${urlPrefix}/resource/track-${trackResName}", trackEventRes)
+						trackRes.addProperty(rdfsLabelProp, "${trackName} Track")
+						trackRes.addProperty(dcTitleProp, trackName)
+							
+						node.addProperty(isPartOfProp, trackRes)
+						trackRes.addProperty(isPartOfProp, confRes)
+					}
+					
+					ev.speaker.each { sp ->
+						def speakerName = sp.name.text().trim()
+						def speakerResName = urlify(speakerName)
+						def twitterHandle = sp.twitter.text()
+						def facebookHandle = sp.facebook.text()
+						def linkedinHandle = sp.linkedin.text()
+						def depiction = sp.photo.text()
+						def organization = sp.company.text()
+						def organizationResName = urlify(organization)
+						def jobTitle = sp.jobtitle.text()
+							
+						def speakerRes = jenaModel.createResource("${urlPrefix}/resource/${speakerResName}", personRes)
+						speakerRes.addProperty(foafNameProp, speakerName)
+						speakerRes.addProperty(rdfsLabelProp, speakerName)
+						speakerRes.addProperty(holdsRoleProp, confSpeakerRes)
+						confSpeakerRes.addProperty(heldByProp, speakerRes)
+							
+						if(jobTitle.size()) {
+							speakerRes.addProperty(VCARD.TITLE, jobTitle)
+						}
+							
+						if(organization.size()) {
+							def organizationRes = jenaModel.createResource("${urlPrefix}/resource/${organizationResName}", 
+								foafOrganizationRes)
+							organizationRes.addProperty(foafNameProp, organization)
+							organizationRes.addProperty(rdfsLabelProp, organization)
+									
+							speakerRes.addProperty(foafMemberProp, organizationRes)
+						}
+							
+						if(twitterHandle.length()) {
+							def twitterRes = jenaModel.createResource(normalizeTwitter(twitterHandle), onlineAccountRes)
+							speakerRes.addProperty(foafAccountProp, twitterRes)
+						}
+						
+						if(facebookHandle.length()) {
+							// TODO: Normalize
+							def facebookRes = jenaModel.createResource(normalizeFacebook(facebookHandle), onlineAccountRes)
+							speakerRes.addProperty(foafAccountProp, facebookRes)
+						}
+						
+						if(linkedinHandle.length()) {
+							def linkedinRes = jenaModel.createResource(normalizeLinkedIn(linkedinHandle), onlineAccountRes)
+							speakerRes.addProperty(foafAccountProp, linkedinRes)
+						}
+						
+						if(depiction.length()) {
+							def depictionRes = jenaModel.createResource(depiction, imageRes)
+							speakerRes.addProperty(foafDepictionProp, depictionRes)
+						}
+						
+						node.addProperty(dcCreatorProp, speakerRes)
+					}
+				}
+			} else {
+
+				def talkTime = dtStart.getString().split("-")[2]
+				
+				def talkTitle = eg.title.text().trim()
+				def talkTitleRes = urlify(talkTitle)
+					
+				def talkId = "${talkTitleRes}-${talkTime}"				
+
+				def talkResURI = getTalkURI(urlPrefix, confname, year, confid, talkId)					
+						
+				node = jenaModel.createResource(talkResURI, eventType)
+				node.addProperty(dcTitleProp, talkTitle)
+				node.addProperty(calStartProp, dtStart)
+				node.addProperty(calEndProp, dtEnd)
+			
+				confRes.addProperty(isSuperEventOfProp, node)				
+			}
+		}
+	} else {
+		println "FAILURE: ${year} HTTP: ${httpCode}"
+	    // TODO: Handle Error (don't cache)
+	}
+
+} catch(Throwable t) {
+   // TODO: Handle Error (don't cache)
+   t.printStackTrace()
+}
+
+resp = context.createResponseFrom(new JenaModelRepresentation(jenaModel))
+resp.setExpiry(resp.EXPIRY_CONSTANT, System.currentTimeMillis() + (86400 * 1000))

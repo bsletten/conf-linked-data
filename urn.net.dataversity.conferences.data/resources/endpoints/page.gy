@@ -1,0 +1,9 @@
+def resource = context.source("arg:resource");
+
+req = context.createRequest("active:xrl2")
+req.addArgument("template", "res:/resources/content/resource.xhtml")
+req.addArgument("content", "active:dataversity-styled-resource-properties+resource@${resource}")
+resp = context.issueRequest(req)
+
+resp = context.createResponseFrom(resp)
+resp.setMimeType("application/xhtml+xml")

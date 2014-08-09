@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+<config>
+	<endpoint>
+	    <meta>
+	        <rest>
+	            <method>GET</method>
+	            <simple></simple>
+				<produces>application/xhtml+xml</produces>
+	            <eTag/>
+	        </rest>
+	    </meta>
+	    <verbs>SOURCE</verbs>
+	    <grammar>
+	        <active>
+	            <identifier>active:dv-root</identifier>
+	        </active>
+	    </grammar>
+	    <request>
+	        <identifier>active:groovy</identifier>
+	        <argument name="operator">res:/resources/endpoints/root.gy</argument>
+	    </request>
+	</endpoint>
+	<endpoint>
+	    <meta>
+	        <rest>
+	            <method>GET</method>
+	            <simple>resource/{resource}</simple>
+				<produces>text/turtle</produces>
+	<!--            <produces>application/vnd.collections+json</produces>
+	            <produces withTransform="active:collectionsJsonToHTML">text/html</produces>-->
+	            <eTag/>
+	        </rest>
+	    </meta>
+	    <verbs>SOURCE</verbs>
+	    <grammar>
+	        <active>
+	            <identifier>active:dv-resource</identifier>
+				<argument name="resource">arg:resource</argument>
+	        </active>
+	    </grammar>
+	    <request>
+	        <identifier>active:groovy</identifier>
+	        <argument name="operator">res:/resources/endpoints/resource.gy</argument>
+	  	  	<argument method="as-string" name="resource">arg:resource</argument>
+	    </request>
+	</endpoint>
+	<endpoint>
+	    <meta>
+	        <rest>
+	            <method>GET</method>
+	            <simple>page/{resource}</simple>
+				<produces>application/xhtml+xml</produces>
+	<!--            <produces>application/vnd.collections+json</produces>
+	            <produces withTransform="active:collectionsJsonToHTML">text/html</produces>-->
+	            <eTag/>
+	        </rest>
+	    </meta>
+	    <verbs>SOURCE</verbs>
+	    <grammar>
+	        <active>
+	            <identifier>active:dv-page-resource</identifier>
+				<argument name="resource">arg:resource</argument>
+	        </active>
+	    </grammar>
+	    <request>
+	        <identifier>active:groovy</identifier>
+	        <argument name="operator">res:/resources/endpoints/page.gy</argument>
+	  	  	<argument method="as-string" name="resource">arg:resource</argument>
+	    </request>
+	</endpoint>
+	<endpoint>
+	    <meta>
+	        <rest>
+	            <method>GET</method>
+	            <simple>data/{resource}.rdf</simple>
+				<produces>application/rdf+xml</produces>
+<!--	            <produces withTransform="active:toTurtle">text/turtle</produces>-->
+	            <eTag/>
+	        </rest>
+	    </meta>
+	    <verbs>SOURCE</verbs>
+	    <grammar>
+	        <active>
+	            <identifier>active:dv-data-resource</identifier>
+				<argument name="resource">arg:resource</argument>
+	        </active>
+	    </grammar>
+	    <request>
+	        <identifier>active:groovy</identifier>
+	        <argument name="operator">res:/resources/endpoints/data.gy</argument>
+	  	  	<argument method="as-string" name="resource">arg:resource</argument>
+	    </request>
+	</endpoint>
+    <endpoint>
+        <grammar>
+            <active>
+                <identifier>active:toTurtle</identifier>
+                <argument name="operand"/>
+            </active>
+        </grammar>
+        <request>
+            <identifier>active:groovy</identifier>
+            <argument name="operand">arg:operand</argument>
+            <argument name="operator">res:/resources/endpoints/toTurtle.gy</argument>
+            <representation>org.netkernel.layer0.representation.IReadableBinaryStreamRepresentation</representation>
+        </request>
+    </endpoint>
+</config>

@@ -1,0 +1,6 @@
+host = context.source("httpRequest:/header/Host")
+	
+context.sink("httpResponse:/code",302);
+context.sink("httpResponse:/header/location", "http://${host}/resource/conferences".toString())
+
+context.createResponseFrom("Redirecting to conference data")

@@ -1,0 +1,12 @@
+value = context.source("arg:value");
+
+req = context.createRequest("active:dataversity-conferences");
+result = context.issueRequest(req);
+
+req = context.createRequest("active:jRDFSerializeTURTLE")
+req.addArgumentByValue("operand", result)
+result = context.issueRequest(req)
+
+resp = context.createResponseFrom(result);
+resp.setMimeType("text/plain")
+

@@ -1,0 +1,10 @@
+req = context.createRequest("active:jRDFParseXML")
+req.addArgument("operand", "arg:operand")
+results = context.issueRequest(req)
+	
+req = context.createRequest("active:jRDFSerializeTURTLE")
+req.addArgumentByValue("operand", results)
+resp = context.issueRequest(req)
+	
+resp = context.createResponseFrom(resp)
+resp.setMimeType("text/turtle")

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN" "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-1.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" 
+    xmlns:dbpprop="http://dbpedia.org/property/" 
+    xmlns:foaf="http://xmlns.com/foaf/0.1/" 
+	xmlns:xrl="http://netkernel.org/xrl"
+    version="XHTML+RDFa 1.0" xml:lang="en">
+	<head>
+		<link rel="stylesheet" type="text/css" href="http://localhost:8080/org/netkernel/html5/framework/pure/latest/pure.min.css"/>
+		
+		<style>
+		body {
+		    color: #777;
+		}
+
+		.pure-img-responsive {
+		    max-width: 100%;
+		    height: auto;
+		}
+		
+		.is-center {
+		    text-align: center;
+		}
+		
+		.l-box {
+		    padding: 1em;
+		}
+		
+		#layout {
+		    position: relative;
+		    padding-left: 0;
+		}
+		    #layout.active {
+		        position: relative;
+		       # left: 150px;
+		    }
+		        #layout.active #menu {
+		         #   left: 150px;
+		          #  width: 150px;
+		        }
+
+		        #layout.active .menu-link {
+		           # left: 150px;
+		        }
+				
+				.content {
+				    margin: 0 auto;
+				    padding: 0 2em;
+				    max-width: 800px;
+				    margin-bottom: 50px;
+				    line-height: 1.6em;
+				}
+
+				.header {
+				     margin: 0;
+				     color: #333;
+				     text-align: center;
+				     padding: 2.5em 2em 0;
+				     border-bottom: 1px solid #eee;
+				 }
+				    .header h1 {
+				        margin: 0.2em 0;
+				        font-size: 3em;
+				        font-weight: 300;
+				    }
+				     .header h2 {
+				        font-weight: 300;
+				        color: #888;
+				        padding: 0;
+				        margin-top: 0;
+				    }
+
+				.content-subhead {
+				    margin: 50px 0 20px 0;
+				    font-weight: 300;
+				    color: #888;
+				}
+				
+				#props {
+					width: 100%;
+				}
+		</style>
+	</head>
+	<body>
+		<div id="layout">
+			<div class="main">
+				<div class="header">
+					<xrl:include identifier="active:dataversity-styled-resource-header"/>	
+				</div>
+				<div class="content">
+					<div class="pure-g">
+						<div class="pure-u-1">
+						<table id="props" class="pure-table pure-table-bordered pure-table-horizontal pure-table-striped">
+							<thead>
+								<tr>
+									<th>Property</th>
+									<th>Value</th>
+								</tr>
+							</thead>
+							<xrl:include identifier="arg:content"/>							
+						</table>
+						</div>
+					</div>
+				</div>
+
+			</div>
+			<div class="footer l-box is-center">
+				<a href="http://dataversity.net">
+					<img height="20px" src="/dv/pub/dv.jpg" alt="DATAVERSITY"/>
+				</a>
+					<a href="http://1060research.com">
+						<img src="http://www.1060research.com/netkernel/poweredbynetkernel.png"
+							alt="Powered by Netkernel"/>
+					</a>
+					<a href="http://bosatsu.net">
+						<img height="30px" src="/dv/pub/bosatsu-kanji-clean.png" alt="Bosatsu Consulting, Inc."/>
+					</a>
+			</div>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<books>
+	<book>
+		<id>book:urn:</id>
+		<title/>
+		<desc>Created with New Module Wizard</desc>
+		<toc>
+			<item id="urn::guide"/>
+			<item id="urn::example"/>
+		</toc>
+	</book>
+</books>

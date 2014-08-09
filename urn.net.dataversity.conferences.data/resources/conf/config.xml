@@ -1,0 +1,65 @@
+<config>
+	<baseurl>http://data.semanticweb.com</baseurl>
+	<conferences>
+		<conference id="20">
+			<name>SemTech</name>
+			<year>2008</year>
+		</conference>
+		<conference id="35">
+			<name>SemTech</name>
+			<year>2009</year>
+		</conference>
+		<conference id="42">
+			<name>SemTech</name>
+			<year>2010</year>
+		</conference>
+		<conference id="62">
+			<name>SemTech</name>
+			<year>2011</year>
+		</conference>
+		<conference id="63">
+			<name>SemTechBiz</name>
+			<location>London</location>
+			<year>2011</year>
+		</conference>
+		<conference id="64">
+			<name>SemTechBiz</name>
+			<location>Washington, DC</location>
+			<year>2011</year>
+		</conference>
+		<conference id="65">
+			<name>SemTech</name>
+			<location>San Francisco</location>
+			<year>2012</year>
+		</conference>
+		<conference id="66">
+			<name>SemTech</name>
+			<location>Berlin</location>
+			<year>2012</year>
+		</conference>
+		<conference id="67">
+			<name>SemTech</name>
+			<location>London</location>
+			<year>2012</year>
+		</conference>
+		<conference id="68">
+			<name>SemTech</name>
+			<location>New York</location>
+			<year>2012</year>
+		</conference>
+		<conference id="70">
+			<name>SemTech</name>
+			<location>San Francisco</location>
+			<year>2013</year>
+		</conference>
+		<conference id="76">
+			<name>SemTech</name>
+			<location>New York</location>
+			<year>2013</year>
+		</conference>
+		<conference id="82">
+			<name>SemTech</name>
+			<year>2014</year>
+		</conference>
+	</conferences>
+</config>

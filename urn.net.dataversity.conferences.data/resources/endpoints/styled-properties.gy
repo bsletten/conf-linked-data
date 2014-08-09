@@ -1,0 +1,121 @@
+import org.netkernel.rdf.jena.rep.*;
+import com.hp.hpl.jena.rdf.model.*;
+import com.hp.hpl.jena.vocabulary.*;
+import com.hp.hpl.jena.shared.*;
+import com.hp.hpl.jena.datatypes.xsd.*;	
+
+
+
+def renderValue(host, node) {
+	def rendered
+		
+	// TODO: Move this into a class
+	def nsMap = [
+		"http://www.w3.org/2001/XMLSchema" : "xsd",
+	    "http://www.w3.org/2000/01/rdf-schema#" : "rdfs",
+		(RDF.getURI().toString()) : "rdf",
+		(DC_11.getURI().toString()) : "dc",
+		"http://www.w3.org/ns/dcat#" : "dcat",
+		"http://purl.org/dc/terms/" : "dcterms",
+		"http://xmlns.com/foaf/0.1/" : "foaf",
+		"http://www.w3.org/2002/12/cal/icaltzd/" : "cal",
+		"http://purl.org/net/biblio#" : "biblio",
+		"http://swrc.ontoware.org/ontology#" : "swrc",
+		"http://data.semanticweb.org/ns/swc/ontology#" : "swc",
+		"http://www.w3.org/2004/02/skos/core#" : "skos",
+		(VCARD.getURI().toString()) : "vcard"
+	]	
+		
+	if(node.isURIResource()) {
+		def nodeRes = node.asResource()
+		def uri = nodeRes.getURI()
+		def ns = nodeRes.getNameSpace().toString()
+		def shownURI = uri
+		def nsPrefix = nsMap[ns]
+			
+		if(nsPrefix) {
+			shownURI = shownURI.replaceAll(ns, "${nsPrefix}:")
+		}
+		
+		def linkURI = uri
+			
+		if(host.startsWith("localhost")) {
+			linkURI = uri.replaceAll("http://data.semanticweb.com", "http://${host}")
+		}
+		
+		rendered = """<a href=\"${linkURI}\">${shownURI}</a>"""
+	} else {
+		rendered = node.toString()
+	}
+	
+	rendered
+}
+
+def addStatements(host, sb, processedProps, stmtItor) {
+	stmtItor.each { st ->
+		sb.append("<tr>")
+			
+		if(!processedProps.contains(st.getPredicate())) {
+			def pred = st.getPredicate()
+			def obj = st.getObject()
+				
+			sb.append("<td><a href='${pred.getURI()}'>${renderValue(host, pred)}</a></td><td>${renderValue(host, st.getObject())}</td>")	
+		}
+		sb.append("</tr>")
+	}
+}
+
+def addObjectStatements(host, sb, stmtItor) {
+	stmtItor.each { st ->
+		sb.append("<tr>")
+			
+		def subj = st.getSubject()
+		def pred = st.getPredicate()
+					
+		sb.append("<td>is <a href='${pred.getURI()}'>${renderValue(host, pred)}</a> of </td><td>${renderValue(host, subj)}</td>")	
+		sb.append("</tr>")
+	}
+}
+
+def host = context.source("httpRequest:/header/Host")
+def resource = context.source("arg:resource");
+def resourceURI = "http://data.semanticweb.com/resource/${resource}".toString()
+	
+def req = context.createRequest("active:dataversity-conferences")
+def model = context.issueRequest(req)
+
+def sb = new StringBuffer("<tbody>")
+	
+def processedProps = []
+def jenaModel = context.source("active:jRDFEmptyModel").getModel()
+
+req = context.createRequest("active:jRDFQueryModelDESCRIBE")
+req.addArgumentByValue("operand", model)
+req.addArgumentByValue("operator", "DESCRIBE <${resourceURI}>".toString())
+resp = context.issueRequest(req)
+	
+jenaModel.add(resp.getModel())
+
+req = context.createRequest("active:jRDFQueryModelCONSTRUCT")
+req.addArgumentByValue("operand", model)
+req.addArgumentByValue("operator", "CONSTRUCT { ?s ?p <${resourceURI}>} WHERE { ?s ?p <${resourceURI}> }".toString())
+resp = context.issueRequest(req)
+
+jenaModel.add(resp.getModel())	
+	
+model = jenaModel
+	
+def resourceRes = model.getResource(resourceURI)
+def rdfTypeProp = model.getProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+def rdfsLabelProp = model.getProperty("http://www.w3.org/2000/01/rdf-schema#label") 
+
+addStatements(host, sb, processedProps, model.listStatements(new SimpleSelector(resourceRes, rdfsLabelProp, null)))
+processedProps.add(rdfsLabelProp)
+addStatements(host, sb, processedProps, model.listStatements(new SimpleSelector(resourceRes, rdfTypeProp, null)))
+processedProps.add(rdfTypeProp)
+addStatements(host, sb, processedProps, model.listStatements(new SimpleSelector(resourceRes, null, null)))
+addObjectStatements(host, sb, model.listStatements(new SimpleSelector(null, null, resourceRes)))
+
+sb.append("</tbody>")
+	
+context.createResponseFrom(sb.toString())

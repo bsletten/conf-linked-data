@@ -1,0 +1,32 @@
+def confid = context.source("arg:confid")
+def confname = context.source("arg:confname")
+def year = context.source("arg:year")
+def urlPrefix
+
+switch(year) {
+	case "2011":
+	case "2012":
+	case "2013":
+	   urlPrefix = "wmb"
+    break;
+	default :
+	   urlPrefix = "wilshire"
+	break;
+}
+def url = "http://${urlPrefix}.skyworld.com/xml/xml.cfm?confid=${confid}"
+
+req = context.createRequest("active:httpGet")
+req.addArgument("url", url)
+req.addArgument("config", "res:/resources/conf/httpClientConfig.xml")
+req.setRepresentationClass(String.class)
+resp = context.issueRequestForResponse(req)
+def httpCode = resp.getHeader("HTTP_ACCESSOR_STATUS_CODE_METADATA")
+
+if( httpCode == 200) {
+	resp = resp.getRepresentation()
+	resp = context.createResponseFrom(resp)
+	resp.setExpiry(resp.EXPIRY_CONSTANT, System.currentTimeMillis() + (86400 * 1000))
+} else {
+	resp = context.createResponseFrom("FAIL")
+}
+

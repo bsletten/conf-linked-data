@@ -1,0 +1,56 @@
+import org.netkernel.layer0.representation.IHDSNode
+import org.netkernel.rdf.jena.rep.*;
+
+def config = context.source("res:/resources/conf/config.xml", IHDSNode.class)
+
+def conferences = config.getNodes("/config/conferences/conference")
+def handles = []
+
+def jenaModel = context.source("active:jRDFEmptyModel").getModel();
+def confCollectionRes = jenaModel.getResource("http://data.semanticweb.com/resource/conferences")
+def rdfsMemberProp = jenaModel.createProperty("http://www.w3.org/2000/01/rdf-schema#member")
+def rdfsLabelProp = jenaModel.createProperty("http://www.w3.org/2000/01/rdf-schema#label")
+
+confCollectionRes.addProperty(rdfsLabelProp, "Conferences Associated with Wilshire Conferences and DATAVERSITY Education, LLC")
+
+conferences.each { c ->
+	def name = c.getFirstValue("name")
+	def year = c.getFirstValue("year")
+	def id = c.getFirstValue("@id")
+	
+	req = context.createRequest("active:dataversity-conference")
+	req.addArgument("confname", name)
+	req.addArgument("confid", id)
+	req.addArgument("year", year)
+		
+	result = context.issueAsyncRequest(req)
+	handles.add(result)
+}
+
+handles.each { h ->
+	def rep = h.join()
+		
+	def conf = rep.getModel()
+		
+	req = context.createRequest("active:jRDFQueryModelSELECT")
+	req.addArgumentByValue("operand", new JenaModelRepresentation(conf))
+	req.addArgumentByValue("operator", 
+		"SELECT ?conf WHERE { ?conf a <http://data.semanticweb.org/ns/swc/ontology#ConferenceEvent> }".toString())
+	resp = context.issueRequest(req)
+
+	def results = new XmlSlurper().parseText(resp)
+	results.results.result.binding.each { b ->
+		def cRes = conf.getResource(b.text())
+		confCollectionRes.addProperty(rdfsMemberProp, cRes)
+	}
+		
+	jenaModel = jenaModel.add(conf)
+	
+//	req = context.createRequest("active:jRDFParseTRIG")
+//	req.addArgumentByValue("operand", rep)
+//	resp = context.issueRequest(req)
+//	println resp
+}
+
+resp = context.createResponseFrom(new JenaModelRepresentation(jenaModel))
+resp.setExpiry(resp.EXPIRY_CONSTANT, System.currentTimeMillis() + (86400 * 1000))	

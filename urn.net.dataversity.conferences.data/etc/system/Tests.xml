@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tests>
+	<test>
+		<id>test:urn:</id>
+		<name/>
+		<desc>Created with New Module Wizard</desc>
+		<uri>res:/resources/test/testlist.xml</uri>
+	</test>
+</tests>
