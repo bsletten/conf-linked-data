@@ -51,29 +51,70 @@ def renderValue(host, node) {
 	rendered
 }
 
-def addStatements(host, sb, processedProps, stmtItor) {
-	stmtItor.each { st ->
-		sb.append("<tr>")
-			
-		if(!processedProps.contains(st.getPredicate())) {
+def newAddStatements(host, sb, model, res, stmtItorList) {
+	def rdfTypeProp = model.getProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+	def rdfsLabelProp = model.getProperty("http://www.w3.org/2000/01/rdf-schema#label") 	
+	
+	def resMap = new TreeMap()
+		
+	def resSortedMap
+		
+	stmtItorList.each { itor ->
+		itor.each { st ->
+			def subj = st.getSubject()
 			def pred = st.getPredicate()
 			def obj = st.getObject()
 				
-			sb.append("<td><a href='${pred.getURI()}'>${renderValue(host, pred)}</a></td><td>${renderValue(host, st.getObject())}</td>")	
-		}
-		sb.append("</tr>")
-	}
-}
-
-def addObjectStatements(host, sb, stmtItor) {
-	stmtItor.each { st ->
-		sb.append("<tr>")
+			resSortedMap = resMap[subj.getURI()]
+				
+			if(!resSortedMap) {
+				resSortedMap = new TreeMap()
+				resMap[subj.getURI()] = resSortedMap
+			}
 			
-		def subj = st.getSubject()
-		def pred = st.getPredicate()
-					
-		sb.append("<td>is <a href='${pred.getURI()}'>${renderValue(host, pred)}</a> of </td><td>${renderValue(host, subj)}</td>")	
-		sb.append("</tr>")
+			def valList = resSortedMap[pred.getURI()]
+			
+			if(!valList) {
+				valList = []
+				resSortedMap[pred.getURI()] = valList
+			}
+			valList.add(obj)
+		}
+    }
+	
+	resSortedMap = resMap[res.getURI()]
+	
+	[rdfsLabelProp, rdfTypeProp].each { p ->
+		resSortedMap[p.getURI()].each { v ->
+			sb.append("<tr>")
+			sb.append("<td><a href='${p.getURI()}'>${renderValue(host, p)}</a></td><td>${renderValue(host, v)}</td>")
+			sb.append("</tr>")							
+		}
+		
+		resSortedMap.remove(p.getURI())
+	}
+
+	resSortedMap.each { k, vList ->
+		vList.sort{ it.toString() }.each { v ->
+			def propNode = model.getResource(k)		
+			sb.append("<tr>")
+			sb.append("<td><a href='${k}'>${renderValue(host, propNode)}</a></td><td>${renderValue(host, v)}</td>")
+			sb.append("</tr>")				
+		}
+	}
+	
+	resMap.remove(res.getURI())
+		
+	resMap.each { r, m ->
+		def s = model.getResource(r)
+			
+		m.each { k, vList ->
+			def p = model.getResource(k)
+				
+			sb.append("<tr>")
+			sb.append("<td>is <a href='${p.getURI()}'>${renderValue(host, p)}</a> of </td><td>${renderValue(host, s)}</td>")
+			sb.append("</tr>")				
+		}
 	}
 }
 
@@ -83,10 +124,7 @@ def resourceURI = "http://data.semanticweb.com/resource/${resource}".toString()
 	
 def req = context.createRequest("active:dataversity-conferences")
 def model = context.issueRequest(req)
-
-def sb = new StringBuffer("<tbody>")
 	
-def processedProps = []
 def jenaModel = context.source("active:jRDFEmptyModel").getModel()
 
 req = context.createRequest("active:jRDFQueryModelDESCRIBE")
@@ -102,19 +140,16 @@ req.addArgumentByValue("operator", "CONSTRUCT { ?s ?p <${resourceURI}>} WHERE { 
 resp = context.issueRequest(req)
 
 jenaModel.add(resp.getModel())	
-	
-model = jenaModel
-	
-def resourceRes = model.getResource(resourceURI)
-def rdfTypeProp = model.getProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
-def rdfsLabelProp = model.getProperty("http://www.w3.org/2000/01/rdf-schema#label") 
 
-addStatements(host, sb, processedProps, model.listStatements(new SimpleSelector(resourceRes, rdfsLabelProp, null)))
-processedProps.add(rdfsLabelProp)
-addStatements(host, sb, processedProps, model.listStatements(new SimpleSelector(resourceRes, rdfTypeProp, null)))
-processedProps.add(rdfTypeProp)
-addStatements(host, sb, processedProps, model.listStatements(new SimpleSelector(resourceRes, null, null)))
-addObjectStatements(host, sb, model.listStatements(new SimpleSelector(null, null, resourceRes)))
+def resourceRes = jenaModel.getResource(resourceURI)
+
+def sb = new StringBuffer("<tbody>")
+	
+// Find all the statements about this resource or where it is the object
+
+newAddStatements(host, sb, jenaModel, resourceRes, 
+	[ jenaModel.listStatements(new SimpleSelector(resourceRes, null, null)), 
+	  jenaModel.listStatements(new SimpleSelector(null, null, resourceRes))])
 
 sb.append("</tbody>")
 	
