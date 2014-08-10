@@ -148,6 +148,10 @@ def normalizeLinkedIn(def linkedin) {
    	  linkedin = linkedin.substring(0, linkedin.length() - 1)
    }
    
+   // This rule is in to deal w/ Stéphane Corlosquet's LinkedIn URL w/ Locale reference.
+   // That should be handled during the rendering process.
+   
+   linkedin = linkedin.replaceAll("&", "&amp;")
    linkedin
 }
 

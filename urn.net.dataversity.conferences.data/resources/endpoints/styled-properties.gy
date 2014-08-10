@@ -52,8 +52,6 @@ def renderValue(host, node) {
 }
 
 def newAddStatements(host, sb, model, res, stmtItorList) {
-	def rdfTypeProp = model.getProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
-	def rdfsLabelProp = model.getProperty("http://www.w3.org/2000/01/rdf-schema#label") 	
 	
 	def resMap = new TreeMap()
 		
@@ -83,27 +81,36 @@ def newAddStatements(host, sb, model, res, stmtItorList) {
     }
 	
 	resSortedMap = resMap[res.getURI()]
+		
+	// We want RDFS Label and RDF Type properties at the top
+	
+	def rdfTypeProp = model.getProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+	def rdfsLabelProp = model.getProperty("http://www.w3.org/2000/01/rdf-schema#label") 	
 	
 	[rdfsLabelProp, rdfTypeProp].each { p ->
 		resSortedMap[p.getURI()].each { v ->
 			sb.append("<tr>")
-			sb.append("<td><a href='${p.getURI()}'>${renderValue(host, p)}</a></td><td>${renderValue(host, v)}</td>")
+			sb.append("<td>${renderValue(host, p)}</td><td>${renderValue(host, v)}</td>")			
 			sb.append("</tr>")							
 		}
 		
 		resSortedMap.remove(p.getURI())
 	}
+	
+	// Then do the other properties sorted by predicate
 
 	resSortedMap.each { k, vList ->
 		vList.sort{ it.toString() }.each { v ->
 			def propNode = model.getResource(k)		
 			sb.append("<tr>")
-			sb.append("<td><a href='${k}'>${renderValue(host, propNode)}</a></td><td>${renderValue(host, v)}</td>")
+			sb.append("<td>${renderValue(host, propNode)}</td><td>${renderValue(host, v)}</td>")				
 			sb.append("</tr>")				
 		}
 	}
 	
 	resMap.remove(res.getURI())
+		
+	// Then do the object relationships sorted by subject
 		
 	resMap.each { r, m ->
 		def s = model.getResource(r)
@@ -126,7 +133,7 @@ def req = context.createRequest("active:dataversity-conferences")
 def model = context.issueRequest(req)
 	
 def jenaModel = context.source("active:jRDFEmptyModel").getModel()
-
+	
 req = context.createRequest("active:jRDFQueryModelDESCRIBE")
 req.addArgumentByValue("operand", model)
 req.addArgumentByValue("operator", "DESCRIBE <${resourceURI}>".toString())
