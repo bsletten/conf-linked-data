@@ -66,5 +66,10 @@
 			<location>San Jose, CA</location>
 			<year>2014</year>
 		</conference>
+		<conference id="81">
+			<name>NoSQL Now</name>
+			<location>San Jose, CA</location>
+			<year>2014</year>
+		</conference>
 	</conferences>
 </config>
