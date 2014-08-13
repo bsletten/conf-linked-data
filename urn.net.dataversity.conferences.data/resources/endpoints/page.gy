@@ -1,9 +1,25 @@
 def resource = context.source("arg:resource");
+def resp
 
-req = context.createRequest("active:xrl2")
-req.addArgument("template", "res:/resources/content/resource.xhtml")
-req.addArgument("content", "active:dataversity-styled-resource-properties+resource@${resource}")
-resp = context.issueRequest(req)
+try {
+	def res = "http://data.semanticweb.com/resource/${resource}"
+	
+	req = context.createRequest("active:dataversity-resource-model")
+	req.addArgument("resource", res)
+	
+	if(!context.issueRequest(req).getModel().isEmpty()) {
+		req = context.createRequest("active:xrl2")
+		req.addArgument("template", "res:/resources/content/resource.xhtml")
+		req.addArgument("content", "active:dataversity-styled-resource-properties+resource@${resource}")
+		resp = context.issueRequest(req)
+	} else {
+		resp = context.source("res:/resources/content/not-found-handler.xhtml", String.class)
+		context.sink("httpResponse:/code",404);			
+	}
+} catch(Throwable t) {
+	resp = context.source("res:/resources/content/error-handler.xhtml", String.class)
+	context.sink("httpResponse:/code",500);
+}
 
 resp = context.createResponseFrom(resp)
 resp.setMimeType("application/xhtml+xml")

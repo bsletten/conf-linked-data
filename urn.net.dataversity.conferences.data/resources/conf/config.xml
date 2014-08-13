@@ -1,20 +1,44 @@
 <config>
 	<baseurl>http://data.semanticweb.com</baseurl>
 	<conferences>
+		<conference id="18">
+			<name>DAMA International Symposium and WILSHIRE Meta-Data Conference</name>
+			<year>2008</year>
+		</conference>
 		<conference id="20">
 			<name>SemTech</name>
 			<location>San Jose, CA</location>
 			<year>2008</year>
+		</conference>
+		<conference id="29">
+			<name>DAMA-NCR and Wilshire Symposium</name>
+			<year>2008</year>
+		</conference>
+		<conference id="31">
+			<name>EDW</name>
+			<year>2009</year>
 		</conference>
 		<conference id="35">
 			<name>SemTech</name>
 			<location>San Jose, CA</location>
 			<year>2009</year>
 		</conference>
+		<conference id="38">
+			<name>EDW</name>
+			<year>2010</year>
+		</conference>
 		<conference id="42">
 			<name>SemTech</name>
 			<location>San Francisco, CA</location>
 			<year>2010</year>
+		</conference>
+		<conference id="48">
+			<name>Enterprise Information Management Conference</name>
+			<year>2010</year>
+		</conference>
+		<conference id="52">
+			<name>EDW</name>
+			<year>2011</year>
 		</conference>
 		<conference id="62">
 			<name>SemTech</name>
@@ -31,9 +55,18 @@
 			<location>Washington, DC</location>
 			<year>2011</year>
 		</conference>
+		<conference id="64">
+			<name>NoSQL Now</name>
+			<location>San Jose, CA</location>
+			<year>2011</year>
+		</conference>
 		<conference id="65">
 			<name>SemTechBiz</name>
 			<location>San Francisco, CA</location>
+			<year>2012</year>
+		</conference>
+		<conference id="65">
+			<name>EDW</name>
 			<year>2012</year>
 		</conference>
 		<conference id="66">
@@ -51,9 +84,39 @@
 			<location>New York, NY</location>
 			<year>2012</year>
 		</conference>
+		<conference id="68">
+			<name>Data Governance and Information Quality Conference</name>
+			<year>2012</year>
+		</conference>
+		<conference id="70">
+			<name>NoSQL Now</name>
+			<location>San Jose, CA</location>
+			<year>2012</year>
+		</conference>
 		<conference id="70">
 			<name>SemTechBiz</name>
 			<location>San Francisco, CA</location>
+			<year>2013</year>
+		</conference>
+		<conference id="71">
+			<name>Data Governance Winter Conference</name>
+			<year>2012</year>
+		</conference>
+		<conference id="72">
+			<name>EDW</name>
+			<year>2013</year>
+		</conference>
+		<conference id="73">
+			<name>Data Governance and Information Quality Conference</name>
+			<year>2013</year>
+		</conference>
+		<conference id="74">
+			<name>NoSQL Now</name>
+			<location>San Jose, CA</location>
+			<year>2013</year>
+		</conference>
+		<conference id="76">
+			<name>Big Data and NoSQL Summer School</name>
 			<year>2013</year>
 		</conference>
 		<conference id="76">
@@ -61,9 +124,26 @@
 			<location>New York, NY</location>
 			<year>2013</year>
 		</conference>
+		<conference id="77">
+			<name>Data Governance Winter Conference</name>
+			<year>2013</year>
+		</conference>
+		<conference id="78">
+			<name>Enterprise DATAVERSITY</name>
+			<year>2013</year>
+		</conference>
+		<conference id="79">
+			<name>EDW</name>
+			<location>Austin, TX</location>
+			<year>2014</year>
+		</conference>		
 		<conference id="82">
 			<name>SemTechBiz</name>
 			<location>San Jose, CA</location>
+			<year>2014</year>
+		</conference>
+		<conference id="80">
+			<name>Data Governance and Information Quality Conference</name>
 			<year>2014</year>
 		</conference>
 		<conference id="81">

@@ -1,8 +1,4 @@
 import org.netkernel.rdf.jena.rep.*;
-import com.hp.hpl.jena.rdf.model.*;
-import com.hp.hpl.jena.vocabulary.*;
-import com.hp.hpl.jena.shared.*;
-import com.hp.hpl.jena.datatypes.xsd.*;
 
 def resource = context.source("arg:resource");
 def preferred = context.source("httpRequest:/accept/preferred")
@@ -37,67 +33,49 @@ Options: application/rdf+xml, text/turtle, text/plain, text/n3, application/ld+j
 	return
 }
 
-def nsMap = [
-	"xsd" : "http://www.w3.org/2001/XMLSchema",
-	"rdfs" : "http://www.w3.org/2000/01/rdf-schema#",
-	"rdf" : RDF.getURI(),
-	"dc" : DC_11.getURI(),
-	"dcat" : "http://www.w3.org/ns/dcat#",
-	"dcterms" : "http://purl.org/dc/terms/",
-	"foaf" : "http://xmlns.com/foaf/0.1/",
-	"cal" : "http://www.w3.org/2002/12/cal/icaltzd/",
-	"biblio" : "http://purl.org/net/biblio#",
-	"swrc" : "http://swrc.ontoware.org/ontology#",
-	"swc" : "http://data.semanticweb.org/ns/swc/ontology#",
-	"skos" : "http://www.w3.org/2004/02/skos/core#",
-	"vcard" : VCARD.getURI()
-]
 
 def req = context.createRequest("active:dataversity-conferences")
 def model = context.issueRequest(req)
 	
 def res = "http://data.semanticweb.com/resource/${resource}"
-
-def jenaModel = context.source("active:jRDFEmptyModel").getModel()
-jenaModel.setNsPrefixes(nsMap)
 	
-req = context.createRequest("active:jRDFQueryModelDESCRIBE")
-req.addArgumentByValue("operand", model)
-req.addArgumentByValue("operator", "DESCRIBE <${res}>".toString())
-resp = context.issueRequest(req)
+req = context.createRequest("active:dataversity-resource-model")
+req.addArgument("resource", res)
 	
-jenaModel.add(resp.getModel())
-
-req = context.createRequest("active:jRDFQueryModelCONSTRUCT")
-req.addArgumentByValue("operand", model)
-req.addArgumentByValue("operator", "CONSTRUCT { ?s ?p <${res}>} WHERE { ?s ?p <${res}> }".toString())
-resp = context.issueRequest(req)
-
-jenaModel.add(resp.getModel())
+def jenaRep = context.issueRequest(req)
 	
-def serializer = "active:jRDFSerializeXML"
+if(!jenaRep.getModel().isEmpty()) {
+		
+	def serializer = "active:jRDFSerializeXML"
 	
-switch(mimeType) {
-	case "text/turtle":
-	serializer = "active:jRDFSerializeTURTLE"
-	break;
-	case "text/plain":
-	serializer = "active:jRDFSerializeN-TRIPLE"	
-	break;
-	case "text/n3":
-	serializer = "active:jRDFSerializeN3"		
-	break;
-	case "application/ld+json":
-	serializer = "active:jRDFSerializeJSONLD"	
-	break;
-	default:
-	println "UNEXPECTED MIME TYPE: ${mimeType}"
-	break;
+	switch(mimeType) {
+		case "text/turtle":
+		serializer = "active:jRDFSerializeTURTLE"
+		break;
+		case "text/plain":
+		serializer = "active:jRDFSerializeN-TRIPLE"	
+		break;
+		case "text/n3":
+		serializer = "active:jRDFSerializeN3"		
+		break;
+		case "application/ld+json":
+		serializer = "active:jRDFSerializeJSONLD"	
+		break;
+		default:
+		println "UNEXPECTED MIME TYPE: ${mimeType}"
+		break;
+	}
+	
+	req = context.createRequest(serializer)
+	req.addArgumentByValue("operand", jenaRep)
+	resp = context.issueRequest(req)
+	
+	resp = context.createResponseFrom(resp)
+	resp.setMimeType(mimeType)
+} else {
+	resp = context.createResponseFrom("Resource: ${res} not found.")
+	resp.setMimeType("text/plain")
+	context.sink("httpResponse:/code",404)
 }
+
 	
-req = context.createRequest(serializer)
-req.addArgumentByValue("operand", new JenaModelRepresentation(jenaModel))
-resp = context.issueRequest(req)
-	
-resp = context.createResponseFrom(resp)
-resp.setMimeType(mimeType)

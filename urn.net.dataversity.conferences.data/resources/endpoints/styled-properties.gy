@@ -46,6 +46,12 @@ def renderValue(host, node) {
 		rendered = """<a href=\"${linkURI}\">${shownURI}</a>"""
 	} else {
 		rendered = node.toString()
+			
+		// This is here as a catchall. String values that might have
+		// an ampersand on its own should be turned into an entity.
+		// This should be done more formally w/ tagsoup or something.
+		// TODO: Address this.
+		rendered = rendered.replaceAll(" & ", " &amp; ")
 	}
 	
 	rendered
@@ -128,36 +134,23 @@ def newAddStatements(host, sb, model, res, stmtItorList) {
 def host = context.source("httpRequest:/header/Host")
 def resource = context.source("arg:resource");
 def resourceURI = "http://data.semanticweb.com/resource/${resource}".toString()
-	
-def req = context.createRequest("active:dataversity-conferences")
-def model = context.issueRequest(req)
-	
-def jenaModel = context.source("active:jRDFEmptyModel").getModel()
-	
-req = context.createRequest("active:jRDFQueryModelDESCRIBE")
-req.addArgumentByValue("operand", model)
-req.addArgumentByValue("operator", "DESCRIBE <${resourceURI}>".toString())
-resp = context.issueRequest(req)
-	
-jenaModel.add(resp.getModel())
 
-req = context.createRequest("active:jRDFQueryModelCONSTRUCT")
-req.addArgumentByValue("operand", model)
-req.addArgumentByValue("operator", "CONSTRUCT { ?s ?p <${resourceURI}>} WHERE { ?s ?p <${resourceURI}> }".toString())
-resp = context.issueRequest(req)
-
-jenaModel.add(resp.getModel())	
-
-def resourceRes = jenaModel.getResource(resourceURI)
-
-def sb = new StringBuffer("<tbody>")
+def req = context.createRequest("active:dataversity-resource-model")
+req.addArgument("resource", resourceURI)
+def jenaModel = context.issueRequest(req).getModel()
 	
-// Find all the statements about this resource or where it is the object
+if(!jenaModel.isEmpty()) {
+	def resourceRes = jenaModel.getResource(resourceURI)
+		
+	def sb = new StringBuffer("<tbody>")
 
-newAddStatements(host, sb, jenaModel, resourceRes, 
-	[ jenaModel.listStatements(new SimpleSelector(resourceRes, null, null)), 
-	  jenaModel.listStatements(new SimpleSelector(null, null, resourceRes))])
+	// Find all the statements about this resource or where it is the object
 
-sb.append("</tbody>")
-	
-context.createResponseFrom(sb.toString())
+	newAddStatements(host, sb, jenaModel, resourceRes, 
+		[ jenaModel.listStatements(new SimpleSelector(resourceRes, null, null)), 
+		  jenaModel.listStatements(new SimpleSelector(null, null, resourceRes))])
+
+	sb.append("</tbody>")
+  	
+	context.createResponseFrom(sb.toString())
+}

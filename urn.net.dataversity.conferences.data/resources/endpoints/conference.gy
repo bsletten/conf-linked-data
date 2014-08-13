@@ -227,9 +227,11 @@ try {
 	def abstractProp = jenaModel.createProperty("${nsMap['dcterms']}abstract")			
 	def descProp = jenaModel.createProperty("${nsMap['dcterms']}description")
 		
-	def confRes = jenaModel.createResource("${urlPrefix}/resource/${confname.toLowerCase()}-${year}-${confid}",
+	def confURLName = urlify(confname)
+		
+	def confRes = jenaModel.createResource("${urlPrefix}/resource/${confURLName}-${year}-${confid}",
 	 	confEventRes)
-	def confSpeakerRes = jenaModel.createResource("${urlPrefix}/resource/${confname.toLowerCase()}-${year}-${confid}-speaker", presenterRes)
+	def confSpeakerRes = jenaModel.createResource("${urlPrefix}/resource/${confURLName}-${year}-${confid}-speaker", presenterRes)
 	confSpeakerRes.addProperty(rdfsLabelProp, "${confname} ${year} ${confid} Speaker")
 	confRes.addProperty(hasRoleProp, confSpeakerRes)
 	confSpeakerRes.addProperty(isRoleAtProp, confRes)
@@ -249,7 +251,7 @@ try {
 			if(eg.event.size()) {
 				eg.event.each { ev ->
 					def talkId = extractTalkId(ev.@href.text())
-					def talkResURI = getTalkURI(urlPrefix, confname, year, confid, talkId)
+					def talkResURI = getTalkURI(urlPrefix, urlify(confname), year, confid, talkId)
 					node = jenaModel.createResource(talkResURI, eventType)
 					node.addProperty(dcTitleProp, sanitize(ev.title.text().trim()))
 					node.addProperty(calStartProp, dtStart)
@@ -385,7 +387,7 @@ try {
 					
 				def talkId = "${talkTitleRes}-${talkTime}"				
 
-				def talkResURI = getTalkURI(urlPrefix, confname, year, confid, talkId)					
+				def talkResURI = getTalkURI(urlPrefix, confURLName, year, confid, talkId)					
 						
 				node = jenaModel.createResource(talkResURI, eventType)
 				node.addProperty(dcTitleProp, talkTitle)

@@ -239,6 +239,22 @@
 					<argument method="as-string" name="resource">arg:resource</argument>
 		        </request>
 			</endpoint>
+			<endpoint>
+				<id>urn:net:dataversity:conference:resource:model</id>
+				<name>Resource Model</name>
+				<description>Return a model containing statements about a resource</description>
+				<grammar>
+		            <active>
+		                <identifier>active:dataversity-resource-model</identifier>
+						<argument name="resource">arg:resource</argument>
+		            </active>
+				</grammar>
+		        <request>
+		            <identifier>active:groovy</identifier>
+		            <argument name="operator">res:/resources/endpoints/resource-model.gy</argument>
+					<argument method="as-string" name="resource">arg:resource</argument>
+		        </request>
+			</endpoint>
          </config>
          <space>
             <fileset>

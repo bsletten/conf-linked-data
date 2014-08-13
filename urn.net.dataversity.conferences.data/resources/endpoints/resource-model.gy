@@ -1,0 +1,63 @@
+import org.netkernel.rdf.jena.rep.*;
+
+import com.hp.hpl.jena.rdf.model.*;
+import com.hp.hpl.jena.vocabulary.*;
+import com.hp.hpl.jena.shared.*;
+import com.hp.hpl.jena.datatypes.xsd.*;
+
+
+def nsMap = [
+	"xsd" : "http://www.w3.org/2001/XMLSchema",
+	"rdfs" : "http://www.w3.org/2000/01/rdf-schema#",
+	"rdf" : RDF.getURI(),
+	"dc" : DC_11.getURI(),
+	"dcat" : "http://www.w3.org/ns/dcat#",
+	"dcterms" : "http://purl.org/dc/terms/",
+	"foaf" : "http://xmlns.com/foaf/0.1/",
+	"cal" : "http://www.w3.org/2002/12/cal/icaltzd/",
+	"biblio" : "http://purl.org/net/biblio#",
+	"swrc" : "http://swrc.ontoware.org/ontology#",
+	"swc" : "http://data.semanticweb.org/ns/swc/ontology#",
+	"skos" : "http://www.w3.org/2004/02/skos/core#",
+	"vcard" : VCARD.getURI()
+]
+
+def resource = context.source("arg:resource");
+def resourceURI
+	
+if(resource.startsWith("http://data.semanticweb.com")) {
+	resourceURI = resource
+} else {
+	resourceURI = "http://data.semanticweb.com/resource/${resource}".toString()
+}
+
+// We need to fetch the comprehensive data set to find information about
+// a single resource because it could span multiple data sources. This
+// will be expensive initially, but should be cached after it is retrieved.
+
+def req = context.createRequest("active:dataversity-conferences")
+def model = context.issueRequest(req)
+
+def jenaModel = context.source("active:jRDFEmptyModel").getModel()
+
+req = context.createRequest("active:jRDFQueryModelDESCRIBE")
+req.addArgumentByValue("operand", model)
+req.addArgumentByValue("operator", "DESCRIBE <${resourceURI}>".toString())
+resp = context.issueRequest(req)
+	
+// If we've found something about the resource, add
+// some more detail, otherwise return an empty model.
+
+if(!resp.getModel().isEmpty())	{
+	jenaModel.add(resp.getModel())
+
+	req = context.createRequest("active:jRDFQueryModelCONSTRUCT")
+	req.addArgumentByValue("operand", model)
+	req.addArgumentByValue("operator", "CONSTRUCT { ?s ?p <${resourceURI}>} WHERE { ?s ?p <${resourceURI}> }".toString())
+	resp = context.issueRequest(req)
+
+	jenaModel.add(resp.getModel())	
+	jenaModel.setNsPrefixes(nsMap)	
+} 
+
+context.createResponseFrom(new JenaModelRepresentation(jenaModel))

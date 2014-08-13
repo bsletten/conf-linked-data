@@ -3,16 +3,21 @@ def confname = context.source("arg:confname")
 def year = context.source("arg:year")
 def urlPrefix
 
-switch(year) {
-	case "2011":
-	case "2012":
-	case "2013":
-	   urlPrefix = "wmb"
-    break;
-	default :
-	   urlPrefix = "wilshire"
-	break;
+if(confname.contains("SemTech")) {
+	switch(year) {
+		case "2011":
+		case "2012":
+		case "2013":
+		   urlPrefix = "wmb"
+	    break;
+		default :
+		   urlPrefix = "wilshire"
+		break;
+	}
+} else {
+	urlPrefix = "wilshire"
 }
+
 def url = "http://${urlPrefix}.skyworld.com/xml/xml.cfm?confid=${confid}"
 
 req = context.createRequest("active:httpGet")
