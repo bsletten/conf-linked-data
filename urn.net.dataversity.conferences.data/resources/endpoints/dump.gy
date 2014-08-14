@@ -1,0 +1,81 @@
+import com.hp.hpl.jena.rdf.model.*;
+import com.hp.hpl.jena.vocabulary.*;
+import com.hp.hpl.jena.shared.*;
+import com.hp.hpl.jena.datatypes.xsd.*;
+
+def compression = context.source("arg:compression");
+def preferred = context.source("httpRequest:/accept/preferred")
+	
+def mimeType
+	
+switch(preferred) {
+	case "text/html":
+	case "*/*":
+	mimeType = "application/rdf+xml"
+	break;
+	
+	case "application/rdf+xml":
+	case "text/turtle":
+	case "text/plain":
+	case "text/n3":
+	case "application/ld+json":
+	mimeType = preferred
+	break;
+	
+	default:
+	println "PREFERRED: ${preferred}"
+	break;
+}
+
+if(!mimeType) {
+	context.sink("httpResponse:/code",406);
+	context.createResponseFrom(
+"""Invalid MIME Type: ${preferred}.
+Options: application/rdf+xml, text/turtle, text/plain, text/n3, application/ld+json
+""".toString())
+	return
+}	
+
+def req = context.createRequest("active:dataversity-conferences")
+def model = context.issueRequest(req)
+	
+def serializer = "active:jRDFSerializeXML"
+
+switch(mimeType) {
+	case "application/rdf+xml" : 
+	serializer = "active:jRDFSerializeXML"
+	break;
+	case "text/turtle":
+	serializer = "active:jRDFSerializeTURTLE"
+	break;
+	case "text/plain":
+	serializer = "active:jRDFSerializeN-TRIPLE"	
+	break;
+	case "text/n3":
+	serializer = "active:jRDFSerializeN3"		
+	break;
+	case "application/ld+json":
+	serializer = "active:jRDFSerializeJSONLD"	
+	break;
+	default:
+	println "UNEXPECTED MIME TYPE: ${mimeType}"
+	break;
+}
+
+req = context.createRequest(serializer)
+req.addArgumentByValue("operand", model)
+resp = context.issueRequest(req)	
+
+def tool
+		
+if(compression.equals("gz")) {
+	tool = "GZIP"
+} else if(compression.equals("zip")) {
+	tool = "ZIP"
+}
+
+req = context.createRequest("active:http${tool}Compress")
+req.addArgumentByValue("operand", resp)
+resp = context.issueRequest(req)
+		
+resp = context.createResponseFrom(resp)

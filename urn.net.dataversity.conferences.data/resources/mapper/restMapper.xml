@@ -48,6 +48,30 @@
 	    <meta>
 	        <rest>
 	            <method>GET</method>
+	            <simple>dump/data.{compression:(gz|zip)}</simple>
+				<produces>text/turtle</produces>
+	<!--            <produces>application/vnd.collections+json</produces>
+	            <produces withTransform="active:collectionsJsonToHTML">text/html</produces>-->
+	            <eTag/>
+	        </rest>
+	    </meta>
+	    <verbs>SOURCE</verbs>
+	    <grammar>
+	        <active>
+	            <identifier>active:dataversity-dump</identifier>
+				<argument name="compression">arg:compression</argument>
+	        </active>
+	    </grammar>
+	    <request>
+	        <identifier>active:groovy</identifier>
+	        <argument name="operator">res:/resources/endpoints/dump.gy</argument>
+	  	  	<argument method="as-string" name="compression">arg:compression</argument>
+	    </request>
+	</endpoint>
+	<endpoint>
+	    <meta>
+	        <rest>
+	            <method>GET</method>
 	            <simple>page/{resource}</simple>
 				<produces>application/xhtml+xml</produces>
 	<!--            <produces>application/vnd.collections+json</produces>

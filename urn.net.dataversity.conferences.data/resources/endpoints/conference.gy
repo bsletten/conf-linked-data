@@ -138,23 +138,38 @@ def normalizeTwitter(def twitName) {
 }
 
 def normalizeFacebook(facebook) {
-	facebook
+	def resp
+	// Null out bogus Facebook accounts
+	if(facebook.contains("facebook")) {
+		if(facebook.startsWith("facebook") || facebook.startsWith("www")) {
+			facebook = "http://" + facebook
+		}
+		resp = facebook
+	}
+	resp
 }
 
 def normalizeLinkedIn(def linkedin) {
-   if(linkedin.startsWith("www")) {
-   	  linkedin = "http://" + linkedin
+	def resp
+		
+	// Null out bogus LinkedIn accounts
+	if(linkedin.contains("linkedin") && !linkedin.contains("@")) {
+	   if(!linkedin.startsWith("http://") && !linkedin.startsWith("https://")) {
+	   	  linkedin = "http://" + linkedin
+	   } 
+   
+	   if(linkedin.endsWith("/") || linkedin.endsWith("%")) {
+	   	  linkedin = linkedin.substring(0, linkedin.length() - 1)
+	   }
+   
+	   // This rule is in to deal w/ Stéphane Corlosquet's LinkedIn URL w/ Locale reference.
+	   // That should be handled during the rendering process.
+	   linkedin = linkedin.replaceAll("&", "&amp;")
+
+	   resp = linkedin
    }
    
-   if(linkedin.endsWith("/")) {
-   	  linkedin = linkedin.substring(0, linkedin.length() - 1)
-   }
-   
-   // This rule is in to deal w/ Stéphane Corlosquet's LinkedIn URL w/ Locale reference.
-   // That should be handled during the rendering process.
-   
-   linkedin = linkedin.replaceAll("&", "&amp;")
-   linkedin
+   resp
 }
 
 //
@@ -367,14 +382,19 @@ try {
 						}
 						
 						if(facebookHandle.length()) {
-							// TODO: Normalize
-							def facebookRes = jenaModel.createResource(normalizeFacebook(facebookHandle), onlineAccountRes)
-							speakerRes.addProperty(foafAccountProp, facebookRes)
+							facebookHandle = normalizeFacebook(facebookHandle)
+							if(facebookHandle) {
+							   def facebookRes = jenaModel.createResource(normalizeFacebook(facebookHandle), onlineAccountRes)
+							   speakerRes.addProperty(foafAccountProp, facebookRes)
+						   }
 						}
 						
 						if(linkedinHandle.length()) {
-							def linkedinRes = jenaModel.createResource(normalizeLinkedIn(linkedinHandle), onlineAccountRes)
-							speakerRes.addProperty(foafAccountProp, linkedinRes)
+							linkedinHandle = normalizeLinkedIn(linkedinHandle)
+							if(linkedinHandle) {
+								def linkedinRes = jenaModel.createResource(linkedinHandle, onlineAccountRes)
+								speakerRes.addProperty(foafAccountProp, linkedinRes)
+						    }
 						}
 						
 						if(depiction.length()) {

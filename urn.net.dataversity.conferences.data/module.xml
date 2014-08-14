@@ -278,6 +278,9 @@
 			<import>
 				<uri>urn:org:netkernel:lang:xrl</uri>
 			</import>
+			<import>
+			  <uri>urn:org:netkernel:tpt:http</uri>
+			</import>
          </space>
       </mapper>
       <fileset><!--Icon-->

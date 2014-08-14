@@ -1,17 +1,53 @@
 import org.netkernel.layer0.representation.IHDSNode
 import org.netkernel.rdf.jena.rep.*;
 
+import com.hp.hpl.jena.rdf.model.*;
+import com.hp.hpl.jena.vocabulary.*;
+import com.hp.hpl.jena.shared.*;
+import com.hp.hpl.jena.datatypes.xsd.*;
+
 def config = context.source("res:/resources/conf/config.xml", IHDSNode.class)
 
 def conferences = config.getNodes("/config/conferences/conference")
 def handles = []
+	
+def nsMap = [
+	"xsd" : "http://www.w3.org/2001/XMLSchema",
+	"rdfs" : "http://www.w3.org/2000/01/rdf-schema#",
+	"rdf" : RDF.getURI(),
+	"dc" : DC_11.getURI(),
+	"dcat" : "http://www.w3.org/ns/dcat#",
+	"dcterms" : "http://purl.org/dc/terms/",
+	"foaf" : "http://xmlns.com/foaf/0.1/",
+	"cal" : "http://www.w3.org/2002/12/cal/icaltzd/",
+	"biblio" : "http://purl.org/net/biblio#",
+	"swrc" : "http://swrc.ontoware.org/ontology#",
+	"swc" : "http://data.semanticweb.org/ns/swc/ontology#",
+	"skos" : "http://www.w3.org/2004/02/skos/core#",
+	"vcard" : VCARD.getURI()
+]
 
+def host = context.source("httpRequest:/header/Host")
+		
 def jenaModel = context.source("active:jRDFEmptyModel").getModel();
-def confCollectionRes = jenaModel.getResource("http://data.semanticweb.com/resource/conferences")
 def rdfsMemberProp = jenaModel.createProperty("http://www.w3.org/2000/01/rdf-schema#member")
 def rdfsLabelProp = jenaModel.createProperty("http://www.w3.org/2000/01/rdf-schema#label")
+def dcatDistributionRes = jenaModel.getResource("http://www.w3.org/ns/dcat#Distribution")
+def dcatDatasetRes = jenaModel.getResource("http://www.w3.org/ns/dcat#Dataset")
+def confCollectionRes = jenaModel.createResource("http://data.semanticweb.com/resource/conferences", dcatDatasetRes)
+def dcatDownloadURLProp = jenaModel.createProperty("http://www.w3.org/ns/dcat#downloadURL")
+def dcatDistributionProp = jenaModel.createProperty("http://www.w3.org/ns/dcat#distribution")
+
+def dcatContactPointProp = jenaModel.createProperty("http://www.w3.org/ns/dcat#contactPoint")
+def dcTitleProp = jenaModel.createProperty("http://purl.org/dc/terms/title")
+def distributionRes = jenaModel.createResource("http://data.semanticweb.com/resource/conf-gzip-dump", dcatDistributionRes)
 
 confCollectionRes.addProperty(rdfsLabelProp, "Conferences Associated with Wilshire Conferences and DATAVERSITY Education, LLC")
+confCollectionRes.addProperty(dcatDistributionProp, distributionRes)
+confCollectionRes.addProperty(dcatContactPointProp, "mailto:data@semanticweb.com")
+	
+distributionRes.addProperty(dcTitleProp, "GZIP RDF/XML Distribution of http://data.semanticweb.com/resource/conferences")
+distributionRes.addProperty(dcatDownloadURLProp, jenaModel.createResource("http://${host}/dump/data.gz"))
 
 conferences.each { c ->
 	def name = c.getFirstValue("name")
@@ -52,5 +88,7 @@ handles.each { h ->
 //	println resp
 }
 
+jenaModel.setNsPrefixes(nsMap)
+	
 resp = context.createResponseFrom(new JenaModelRepresentation(jenaModel))
-resp.setExpiry(resp.EXPIRY_CONSTANT, System.currentTimeMillis() + (86400 * 1000))	
+resp.setExpiry(resp.EXPIRY_CONSTANT, System.currentTimeMillis() + (86400 * 1000))
