@@ -61,20 +61,22 @@ def getEventType(urlPrefix, nsMap, model, eventName) {
 }
 
 def urlify(str) {
-	str = str.toLowerCase()
-	str = str.trim()
-	str = str.replaceAll(" ", "-")
-	str = str.replaceAll("'", "")
-	str = str.replaceAll(",", "")
-	str = str.replaceAll("\\.", "")
-	str = str.replaceAll("&", "and")
-	str = str.replaceAll("\\!", "")
-	str = str.replaceAll("/", "-")
-	str = str.replaceAll("\"", "")
+	if(!str.startsWith("http://")) {
+		str = str.toLowerCase()
+		str = str.trim()
+		str = str.replaceAll(" ", "-")
+		str = str.replaceAll("'", "")
+		str = str.replaceAll(",", "")
+		str = str.replaceAll("\\.", "")
+		str = str.replaceAll("&", "and")
+		str = str.replaceAll("\\!", "")
+		str = str.replaceAll("/", "-")
+		str = str.replaceAll("\"", "")
 		
-	while(str.indexOf("--") > 0) {
-		str = str.replaceAll("--", "-")
-	}
+		while(str.indexOf("--") > 0) {
+			str = str.replaceAll("--", "-")
+		}
+    }
 	
 	str
 }
@@ -326,6 +328,11 @@ try {
 					
 					ev.speaker.each { sp ->
 						def speakerName = sp.name.text().trim()
+						// Sometimes a Speaker is an organization with only one name. It comes through
+						// as ,Foo. We're just cleaning it up.
+						if(speakerName.startsWith(",")) {
+							speakerName = speakerName.substring(1)
+						}
 						def speakerResName = urlify(speakerName)
 						def twitterHandle = sp.twitter.text()
 						def facebookHandle = sp.facebook.text()
