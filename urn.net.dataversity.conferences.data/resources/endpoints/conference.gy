@@ -333,7 +333,7 @@ try {
 						def depiction = sp.photo.text()
 						def organization = sp.company.text()
 						def organizationResName = urlify(organization)
-						def jobTitle = sp.jobtitle.text()
+						def jobTitle = sp.jobtitle.text().replaceAll("&", "&amp;")
 							
 						def speakerRes = jenaModel.createResource("${urlPrefix}/resource/${speakerResName}", personRes)
 						speakerRes.addProperty(foafNameProp, speakerName)

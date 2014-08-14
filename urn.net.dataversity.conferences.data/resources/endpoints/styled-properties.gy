@@ -46,12 +46,6 @@ def renderValue(host, node) {
 		rendered = """<a href=\"${linkURI}\">${shownURI}</a>"""
 	} else {
 		rendered = node.toString()
-			
-		// This is here as a catchall. String values that might have
-		// an ampersand on its own should be turned into an entity.
-		// This should be done more formally w/ tagsoup or something.
-		// TODO: Address this.
-		rendered = rendered.replaceAll(" & ", " &amp; ")
 	}
 	
 	rendered
