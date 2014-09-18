@@ -125,7 +125,14 @@ def newAddStatements(host, sb, model, res, stmtItorList) {
 	}
 }
 
-def host = context.source("httpRequest:/header/Host")
+//def host = context.source("httpRequest:/header/Host")
+/*
+def host = context.source("httpRequest:/url")
+host = URI.create(host)
+host = """${host.getHost()}:${host.getPort()}"""
+*/
+host = "localhost:8080"
+
 def resource = context.source("arg:resource");
 def resourceURI = "http://data.semanticweb.com/resource/${resource}".toString()
 

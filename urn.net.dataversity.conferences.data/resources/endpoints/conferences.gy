@@ -27,7 +27,14 @@ def nsMap = [
 	"vcard" : VCARD.getURI()
 ]
 
-def host = context.source("httpRequest:/header/Host")
+/*
+def host = context.source("httpRequest:/url")
+host = URI.create(host)
+host = """${host.getHost()}:${host.getPort()}"""
+*/
+def host = "localhost:8080"
+//println(host)
+
 		
 def jenaModel = context.source("active:jRDFEmptyModel").getModel();
 def rdfsMemberProp = jenaModel.createProperty("http://www.w3.org/2000/01/rdf-schema#member")

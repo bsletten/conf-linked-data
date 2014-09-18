@@ -137,6 +137,7 @@
                   <identifier>active:groovy</identifier>
                   <argument name="operator">res:/resources/endpoints/page.gy</argument>
 				  <argument method="as-string" name="resource">arg:resource</argument>
+				  <argument method="as-string" name="url">httpRequest:/url</argument>
                </request>
             </endpoint>
             <endpoint>
@@ -309,9 +310,6 @@
             <regex type="anything"/>
          </grammar>
       </endpoint>
-      <import><!-- import the main space which we are testing -->
-         <uri>urn:</uri>
-      </import>
       <import>
          <uri>urn:org:netkernel:ext:layer1</uri>
          <private/>

@@ -1,5 +1,7 @@
 def resource = context.source("arg:resource");
 def resp
+def url = context.source("arg:url")
+println(url)
 
 try {
 	def res = "http://data.semanticweb.com/resource/${resource}"

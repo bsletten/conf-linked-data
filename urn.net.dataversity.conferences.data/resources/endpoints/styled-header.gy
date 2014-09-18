@@ -1,2 +1,3 @@
-def url = context.source("httpRequest:/url")
+//def url = context.source("httpRequest:/url")
+def url=""
 context.createResponseFrom("<h2>Resource: ${url}</h2>".toString())
